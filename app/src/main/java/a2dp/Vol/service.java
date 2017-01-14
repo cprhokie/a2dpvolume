@@ -1330,7 +1330,7 @@ public class service extends Service implements OnAudioFocusChangeListener {
                 if (bundle != null) {
 					/* Get all messages contained in the Intent */
                     Object[] pdusObj = (Object[]) bundle.get("pdus");
-                    SmsMessage[] messages = new SmsMessage[pdusObj.length];
+                     SmsMessage[] messages = new SmsMessage[pdusObj.length];
                     for (int i = 0; i < pdusObj.length; i++) {
                         messages[i] = SmsMessage
                                 .createFromPdu((byte[]) pdusObj[i]);
