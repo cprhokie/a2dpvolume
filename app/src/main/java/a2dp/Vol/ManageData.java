@@ -8,9 +8,9 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -27,10 +27,8 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.channels.FileChannel;
 import java.util.List;
+import java.util.Objects;
 import java.util.Vector;
-
-import static a2dp.Vol.R.string.ListName;
-import static android.R.attr.name;
 
 /**
  * @author Leveraged from an example, modified by Jim Roal This activity manages
@@ -82,8 +80,11 @@ public class ManageData extends Activity {
 
         this.setContentView(R.layout.managedata);
 
-        this.output = (TextView) findViewById(R.id.Output);
-        this.path = (TextView) findViewById(R.id.Path);
+        // Show the Up button in the action bar.
+        setupActionBar();
+
+        this.output = findViewById(R.id.Output);
+        this.path = findViewById(R.id.Path);
         // initially populate "output" view from database
         new SelectDataTask().execute();
 
@@ -120,7 +121,7 @@ public class ManageData extends Activity {
         }
 
 
-        this.pushNamesButton = (Button) this.findViewById(R.id.pushNamesButton);
+        this.pushNamesButton = this.findViewById(R.id.pushNamesButton);
         this.pushNamesButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -154,7 +155,7 @@ public class ManageData extends Activity {
             }
         });
 
-        this.exportDbToSdButton = (Button) this
+        this.exportDbToSdButton = this
                 .findViewById(R.id.exportdbtosdbutton);
         this.exportDbToSdButton.setOnClickListener(new OnClickListener() {
             public void onClick(final View v) {
@@ -170,7 +171,7 @@ public class ManageData extends Activity {
             }
         });
 
-        this.exportDbXmlToSdButton = (Button) this
+        this.exportDbXmlToSdButton = this
                 .findViewById(R.id.exportdbxmltosdbutton);
         this.exportDbXmlToSdButton.setOnClickListener(new OnClickListener() {
             public void onClick(final View v) {
@@ -187,7 +188,7 @@ public class ManageData extends Activity {
             }
         });
 
-        this.importDB = (Button) this.findViewById(R.id.ImportDBButton);
+        this.importDB = this.findViewById(R.id.ImportDBButton);
         this.importDB.setOnClickListener(new OnClickListener() {
             public void onClick(final View v) {
                 if (ManageData.this.isExternalStorageAvail()) {
@@ -203,7 +204,7 @@ public class ManageData extends Activity {
             }
         });
 
-        this.exportLoc = (Button) this.findViewById(R.id.ExportLoc);
+        this.exportLoc = this.findViewById(R.id.ExportLoc);
         this.exportLoc.setOnClickListener(new OnClickListener() {
             public void onClick(final View v) {
                 if (ManageData.this.isExternalStorageAvail()) {
@@ -226,9 +227,17 @@ public class ManageData extends Activity {
         super.onPause();
     }
 
+    /**
+     * Set up the {@link android.app.ActionBar}.
+     */
+    private void setupActionBar() {
+
+        Objects.requireNonNull(getActionBar()).setDisplayHomeAsUpEnabled(true);
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
+                                           @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
             case MY_PERMISSIONS: {
                 // If request is cancelled, the result arrays are empty.
@@ -324,8 +333,7 @@ public class ManageData extends Activity {
             } finally {
                 if (inChannel != null)
                     inChannel.close();
-                if (outChannel != null)
-                    outChannel.close();
+                outChannel.close();
             }
         }
 
@@ -478,8 +486,7 @@ public class ManageData extends Activity {
             } finally {
                 if (inChannel != null)
                     inChannel.close();
-                if (outChannel != null)
-                    outChannel.close();
+                outChannel.close();
             }
         }
 
@@ -546,8 +553,7 @@ public class ManageData extends Activity {
             } finally {
                 if (inChannel != null)
                     inChannel.close();
-                if (outChannel != null)
-                    outChannel.close();
+                outChannel.close();
             }
         }
 

@@ -1,7 +1,6 @@
 package a2dp.Vol;
 
 import android.app.Notification;
-import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -9,21 +8,18 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
-import android.text.TextUtils;
-import android.widget.RemoteViews;
-import android.widget.Toast;
 
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Created by Jim on 1/18/2016.
@@ -37,8 +33,8 @@ public class NotificationCatcher extends NotificationListenerService {
     private String packagelist;
     private MyApplication application;
     SharedPreferences preferences;
-    List<notItem> notList = new ArrayList<notItem>();
-    List<String> apps1 = new ArrayList<String>();
+    List<notItem> notList = new ArrayList<>();
+    List<String> apps1 = new ArrayList<>();
 
     public NotificationCatcher() {
         super();
@@ -47,7 +43,12 @@ public class NotificationCatcher extends NotificationListenerService {
     @Override
     public void onCreate() {
 
-        this.application = (MyApplication) this.getApplication();
+        try {
+            this.application = (MyApplication) this.getApplication();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
         preferences = PreferenceManager
                 .getDefaultSharedPreferences(this.application);
         IntentFilter reloadmessage = new IntentFilter("a2dp.vol.Reload");
@@ -118,7 +119,7 @@ public class NotificationCatcher extends NotificationListenerService {
                         .getApplicationLabel(appInfo) : pack);
 
 
-                // abort if we can get the notification
+                // abort if we can't get the notification
                 Notification notification = sbn.getNotification();
                 if (notification == null) return null;
                 // get the time this notification was posted
@@ -130,6 +131,7 @@ public class NotificationCatcher extends NotificationListenerService {
                 Boolean found = false;
                 while (itr.hasNext()) {
                     notItem element = itr.next();
+
                     if (element.getNot().equals(pack)) {
                         if ((element.getNottime() + 1000) < when) {
                             notList.set(notList.indexOf(element), item);  // if the package sent a new notification update the last time
@@ -155,8 +157,7 @@ public class NotificationCatcher extends NotificationListenerService {
 
                 // these apps use the TickerText properly
                 if (apps1.contains(pack)) {
-                    if (ticker != null) str += ticker;
-                    else return null;
+                    str += ticker;
                 } else {
 
                     // get the lines of the notification
@@ -177,8 +178,8 @@ public class NotificationCatcher extends NotificationListenerService {
                     // get the text string to see if there is something in it
                     String text = "";
                     if (bun.getString(Notification.EXTRA_TEXT) != null) {
-                        if (!bun.getString(Notification.EXTRA_TEXT).isEmpty())
-                            text = bun.getString(Notification.EXTRA_TEXT).toString();
+                        if (!Objects.requireNonNull(bun.getString(Notification.EXTRA_TEXT)).isEmpty())
+                            text = Objects.requireNonNull(bun.getString(Notification.EXTRA_TEXT)).toString();
                     }
 
                     // figure out which have valid strings and which we want to communicate
@@ -197,15 +198,14 @@ public class NotificationCatcher extends NotificationListenerService {
                     //if there is no ticker or strings then ignore it.
                     if (temp.isEmpty() && ticker.isEmpty() && text.isEmpty()) return null;
 
-                    if (pack == "com.google.android.apps.fireball") { // Google Allo handling
-                        if (ticker != null) str = appName + ", " + ticker + ", " + text;
-                        else return null;
+                    if (pack.equalsIgnoreCase("com.google.android.apps.fireball")) { // Google Allo handling
+                        str = appName + ", " + ticker + ", " + text;
                     }
                 }
 
 
                 // read out the message by sending it to the service
-                if (connected > 0 && str.length() > 0) {
+                if (str.length() > 0) {
                     final String IRun = "a2dp.vol.service.MESSAGE";
                     Intent intent = new Intent();
                     intent.setAction(IRun);
@@ -228,11 +228,14 @@ public class NotificationCatcher extends NotificationListenerService {
 
         packagelist = preferences
                 .getString("packages",
-                        "com.google.android.talk,com.android.email,com.android.calendar");
+                        "com.google.android.talk,com.android.email,com.android.calendar,com.google.android.apps.messaging,com.skype.raider");
         packages = packagelist.split(",");
 
-        apps1.add("com.google.android.talk");
-        apps1.add("com.skype.raider");
+        // apps list below are handled differently based on how they post notifications
+        apps1.add("com.google.android.talk"); // Hangouts
+        apps1.add("com.skype.raider"); // Skype
+        apps1.add("com.google.android.apps.messaging"); // Google messaging app
+        apps1.add("com.google.android.apps.tachyon"); // Google Duo
     }
 
     private final BroadcastReceiver reloadprefs = new BroadcastReceiver() {
@@ -254,7 +257,7 @@ public class NotificationCatcher extends NotificationListenerService {
     };
 
     /*This class stores the packages that have posted notifications, and the last time they posted
-    * it is used to make sure notifications are not read multiple times.*/
+     * it is used to make sure notifications are not read multiple times.*/
 
     private class notItem {
         String not;

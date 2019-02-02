@@ -2,8 +2,12 @@ package a2dp.Vol;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
+import android.preference.ListPreference;
 import android.preference.PreferenceActivity;
+
+import java.util.Objects;
 
 /**
  * @author Jim Roal This is the preference activity. It loads and saves the
@@ -39,7 +43,7 @@ public class Preferences extends PreferenceActivity {
 		SharedPreferences.Editor editor = settings.edit();
 
 		// Commit the edits!
-		editor.commit();
+		editor.apply();
 
 
 
@@ -61,5 +65,16 @@ public class Preferences extends PreferenceActivity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.preferences);
+        // Show the Up button in the action bar.
+        setupActionBar();
+
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
+			
+		}
 	}
+    private void setupActionBar() {
+
+        Objects.requireNonNull(getActionBar()).setDisplayHomeAsUpEnabled(true);
+    }
 }

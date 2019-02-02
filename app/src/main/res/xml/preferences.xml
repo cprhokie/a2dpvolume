@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:enabled="true"
     android:title="@string/app_name">
 
@@ -27,6 +28,7 @@
         <ListPreference
             android:defaultValue="always"
             android:dialogTitle="@string/PrefsNotify"
+            android:enabled="false"
             android:entries="@array/PrefsNotifyOptions"
             android:entryValues="@array/PrefsNotifyItems"
             android:key="notify_pref"
@@ -63,12 +65,6 @@
             android:summaryOff="@string/PrefsPowerOFF"
             android:summaryOn="@string/PrefsPowerON"
             android:title="@string/PrefsPower" />
-        <CheckBoxPreference
-            android:defaultValue="false"
-            android:key="enableTTS"
-            android:summaryOff="@string/PrefsTTSOFF"
-            android:summaryOn="@string/PrefsTTSON"
-            android:title="@string/PrefsTTS"></CheckBoxPreference>
         <CheckBoxPreference
             android:defaultValue="true"
             android:enabled="true"

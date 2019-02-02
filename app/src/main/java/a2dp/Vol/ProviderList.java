@@ -3,8 +3,10 @@ package a2dp.Vol;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
+import java.util.Objects;
 
 import android.app.ListActivity;
+import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
@@ -120,23 +122,26 @@ public class ProviderList extends ListActivity {
 		super.onCreate(savedInstanceState);
 		
 		mProvider = getIntent().getIntExtra(EXTRA_PROVIDER, 0);
-		
-		setTitle(P_WINDOW_TITLES[mProvider]);
-		((TextView)getListView().getEmptyView()).setText(P_EMPTY_LIST_MSGS[mProvider]);
-		
+		if(mProvider < 0){
+			setTitle(P_WINDOW_TITLES[mProvider]);
+			((TextView)getListView().getEmptyView()).setText(P_EMPTY_LIST_MSGS[mProvider]);
+		}
+
 		loadList();
 	}
 	
 	private void loadList() {
-		Cursor c = null;
+
 		try {
-			c = managedQuery(
-				Uri.parse(P_URI_STRINGS[mProvider]), 
+			//CursorLoader c = new CursorLoader(this.getBaseContext());
+			CursorLoader c = new CursorLoader(this,
+				Uri.parse(P_URI_STRINGS[mProvider]),
 				new String[] {KEY_ID, P_TITLE_KEYS[mProvider]}, 
 				P_WHERE_KEYS[mProvider], 
 				null, 
 				P_TITLE_KEYS[mProvider]);
-			
+
+
 			
 			if (c == null) {
 				if (mProvider == PROVIDER_HOMESCREEN) {
@@ -149,12 +154,14 @@ public class ProviderList extends ListActivity {
 					loadList();
 				}
 			} else {
+
 				mListAdapter = new SimpleCursorAdapter(
-						this, 
-						R.layout.pandora_station_item, 
-						c, 
-						new String[] {P_TITLE_KEYS[mProvider]}, 
-						new int[] {R.id.psi_tv_station_name});
+						this,
+						R.layout.pandora_station_item,
+						c.loadInBackground(),
+						new String[] {P_TITLE_KEYS[mProvider]},
+						new int[] {R.id.psi_tv_station_name},0);
+
 					setListAdapter(mListAdapter);
 			}
 				
@@ -183,7 +190,7 @@ public class ProviderList extends ListActivity {
 				KEY_ID + "=" + id,
 				null,
 				null);
-		c.moveToFirst();
+		Objects.requireNonNull(c).moveToFirst();
 		
 		String title = c.getString(c.getColumnIndexOrThrow(P_TITLE_KEYS[mProvider]));
 		String data = c.getString(c.getColumnIndexOrThrow(P_DATA_KEYS[mProvider]));

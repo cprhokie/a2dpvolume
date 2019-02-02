@@ -1,17 +1,9 @@
 package a2dp.Vol;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Set;
-import java.util.Vector;
-
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
@@ -34,9 +26,9 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Environment;
 import android.os.IBinder;
-import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.ContextCompat;
@@ -53,6 +45,15 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Set;
+import java.util.Vector;
+
 //import com.google.android.gms.appindexing.Action;
 //import com.google.android.gms.appindexing.AppIndex;
 //import com.google.android.gms.appindexing.Thing;
@@ -61,10 +62,10 @@ import android.widget.Toast;
 public class main extends Activity {
 
     static AudioManager am = (AudioManager) null;
-    static Button serv;
+    Button serv;
     boolean servrun = false;
     ListView lvl = null; // listview used on main screen for showing devices
-    Vector<btDevice> vec = new Vector<btDevice>(); // vector of bluetooth
+    Vector<btDevice> vec = new Vector<>(); // vector of bluetooth
     // devices
     private DeviceDB myDB; // database of device data stored in SQlite
     String activebt = null;
@@ -99,12 +100,12 @@ public class main extends Activity {
      * See https://g.co/AppIndexing/AndroidStudio for more information.
      */
     //private GoogleApiClient client;
+
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
      */
     //private com.google.android.gms.common.api.GoogleApiClient client2;
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -230,10 +231,10 @@ public class main extends Activity {
         }
         connects = 0;
         am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        final Button btn = (Button) findViewById(R.id.Button01);
+        final Button btn = findViewById(R.id.Button01);
 
-        final Button locbtn = (Button) findViewById(R.id.Locationbtn);
-        serv = (Button) findViewById(R.id.ServButton);
+        final Button locbtn = findViewById(R.id.Locationbtn);
+        serv = findViewById(R.id.ServButton);
 
         // these 2 intents are sent from the service to inform us of the running
         // state
@@ -304,8 +305,8 @@ public class main extends Activity {
 //			startActivity(intent);
         }
 
-        this.ladapt = new ArrayAdapter<String>(application, resourceID, lstring);
-        this.lvl = (ListView) findViewById(R.id.ListView01);
+        this.ladapt = new ArrayAdapter<>(application, resourceID, lstring);
+        this.lvl = findViewById(R.id.ListView01);
         this.lvl.setAdapter(ladapt);
 
         // find bonded devices and load into the database and listview
@@ -317,7 +318,7 @@ public class main extends Activity {
 
         // This shows the details of the bluetooth device
         lvl.setOnItemLongClickListener(new OnItemLongClickListener() {
-            public boolean onItemLongClick(AdapterView<?> parent, View view,
+            public boolean onItemLongClick(AdapterView<?> parent, final View view,
                                            int position, long id) {
 
                 if (vec.isEmpty())
@@ -378,14 +379,18 @@ public class main extends Activity {
                                     return;
                                 // String file =
                                 // "content://com.android.htmlfileprovider"
-                                String file = "file:///" + exportDir.getPath()
+                                String file = "file:////" + exportDir.getPath()
                                         + "/" + car.replaceAll(" ", "_")
                                         + ".html";
-                                String st = new String(file).trim();
+                                String st = file.trim();
 
                                 Uri uri = Uri.parse(st);
-                                Intent intent = new Intent();
+ /*                               android.net.Uri aUri = Uri.fromFile(exportDir);
+                                uri = Uri.withAppendedPath(aUri, car.replaceAll(" ", "_")
+                                        + ".html" );*/
+                                Intent intent = new Intent(application, LocViewer.class);
                                 //intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+/*
                                 intent.setAction(Intent.ACTION_VIEW);
                                 intent.setDataAndType(uri, "text/html");
                                 try {
@@ -396,12 +401,17 @@ public class main extends Activity {
                                     intent.setClassName("com.android.browser",
                                             "com.android.browser.BrowserActivity");
                                     e1.printStackTrace();
-                                }
-
+                                }*/
+                                intent.putExtra("filestr", st);
+                                intent.putExtra("name", car);
+                                startActivity(intent);
 
                                 try {
-                                    startActivity(intent);
-                                    /*WebView myWebView = (WebView) findViewById(R.id.webview);
+                                    //startActivity(intent);
+
+
+/*                                    setContentView(R.layout.web_window);
+                                    WebView myWebView = (WebView) findViewById(R.id.webview);
                                     myWebView.loadUrl(uri.toString());*/
                                 } catch (Exception e) {
                                     // TODO Auto-generated catch block
@@ -417,6 +427,7 @@ public class main extends Activity {
                 return true;
             }
         });
+
 
         // display the selected item and allow editing
         lvl.setOnItemClickListener(new OnItemClickListener() {
@@ -544,24 +555,24 @@ public class main extends Activity {
         refreshList(loadFromDB());
 
         int ps = permission_scan();
-        if(ps > 0)check_permissions(ps);
+        if (ps > 0) check_permissions(ps);
 
         super.onCreate(savedInstanceState);
     }
 
 
-    private int permission_scan(){
+    private int permission_scan() {
 
         int ret = 0;
-        if(!preferences.getBoolean("ReadContactsPermission",false))ret = 1;
+//        if (!preferences.getBoolean("ReadContactsPermission", false)) ret = 1;
 
-        if(!preferences.getBoolean("LocationPermission",false))ret = 2;
+        if (!preferences.getBoolean("LocationPermission", false)) ret = 2;
 
-        if(!preferences.getBoolean("PhonePermission",false))ret = 3;
+        if (!preferences.getBoolean("PhonePermission", false)) ret = 3;
 
-        if(!preferences.getBoolean("SMSPermission",false))ret = 4;
+//        if (!preferences.getBoolean("SMSPermission", false)) ret = 4;
 
-        if(!preferences.getBoolean("StoragePermission",false))ret = 5;
+        if (!preferences.getBoolean("StoragePermission", false)) ret = 5;
 
         return ret;
     }
@@ -571,7 +582,7 @@ public class main extends Activity {
         // Check permissions
 
         switch (perm) {
-            case PERMISSION_READ_CONTACTS:
+ /*           case PERMISSION_READ_CONTACTS:
                 if (ContextCompat.checkSelfPermission(application,
                         Manifest.permission.READ_CONTACTS)
                         != PackageManager.PERMISSION_GRANTED) {
@@ -597,7 +608,7 @@ public class main extends Activity {
                         // result of the request.
                     }
                 }
-                break;
+                break;*/
 
             case PERMISSION_LOCATION:
                 if (ContextCompat.checkSelfPermission(application,
@@ -627,7 +638,7 @@ public class main extends Activity {
                 }
                 break;
 
-            case PERMISSION_SMS:
+ /*           case PERMISSION_SMS:
                 if (ContextCompat.checkSelfPermission(application,
                         Manifest.permission.RECEIVE_SMS)
                         != PackageManager.PERMISSION_GRANTED) {
@@ -653,7 +664,7 @@ public class main extends Activity {
                         // result of the request.
                     }
                 }
-                break;
+                break;*/
 
             case PERMISSION_PHONE:
                 if (ContextCompat.checkSelfPermission(application,
@@ -732,9 +743,9 @@ public class main extends Activity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
+                                           @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
-            case PERMISSION_READ_CONTACTS: {
+ /*           case PERMISSION_READ_CONTACTS: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -749,10 +760,10 @@ public class main extends Activity {
                 }
                 SharedPreferences.Editor editor = preferences.edit();
                 editor.putBoolean("ReadContactsPermission", true);
-                editor.commit();
+                editor.apply();
 
                 break;
-            }
+            }*/
             case PERMISSION_LOCATION: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
@@ -768,7 +779,7 @@ public class main extends Activity {
                 }
                 SharedPreferences.Editor editor = preferences.edit();
                 editor.putBoolean("LocationPermission", true);
-                editor.commit();
+                editor.apply();
 
                 break;
             }
@@ -787,11 +798,11 @@ public class main extends Activity {
                 }
                 SharedPreferences.Editor editor = preferences.edit();
                 editor.putBoolean("PhonePermission", true);
-                editor.commit();
+                editor.apply();
 
                 break;
             }
-            case PERMISSION_SMS: {
+ /*           case PERMISSION_SMS: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -806,10 +817,10 @@ public class main extends Activity {
                 }
                 SharedPreferences.Editor editor = preferences.edit();
                 editor.putBoolean("SMSPermission", true);
-                editor.commit();
+                editor.apply();
 
                 break;
-            }
+            }*/
             case PERMISSION_STORAGE: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
@@ -825,7 +836,7 @@ public class main extends Activity {
                 }
                 SharedPreferences.Editor editor = preferences.edit();
                 editor.putBoolean("StoragePermission", true);
-                editor.commit();
+                editor.apply();
 
                 break;
             }
@@ -834,9 +845,8 @@ public class main extends Activity {
 
         }
         int ps = permission_scan();
-        if(ps > 0)check_permissions(ps);
+        if (ps > 0) check_permissions(ps);
 
-        return;
     }
 
 
@@ -914,6 +924,7 @@ public class main extends Activity {
         try {
             byte[] buff = new byte[250];
             FileInputStream fs = openFileInput("My_Last_Location");
+            if (fs == null) fs = openFileInput("My_Last_Location2");
             fs.read(buff);
             fs.close();
             String st = new String(buff).trim();
@@ -947,22 +958,22 @@ public class main extends Activity {
         // the application for use.
         /*
          * btDevice bt3 = new btDevice(); bt3.setBluetoothDevice("Device 1",
-		 * "Porsche", "00:22:33:44:55:66:77", 15); i = 1; btDevice btx =
-		 * myDB.getBTD(bt3.mac); if(btx.mac == null) {
-		 * a2dp.Vol.main.this.myDB.insert(bt3); vec.add(bt3); } else
-		 * vec.add(btx);
-		 * 
-		 * btDevice bt4 = new btDevice();
-		 * bt4.setBluetoothDevice("Motorola T605", "Jaguar",
-		 * "33:44:55:66:77:00:22", 14); btDevice bty = myDB.getBTD(bt4.mac); i =
-		 * 2; if(bty.mac == null) { a2dp.Vol.main.this.myDB.insert(bt4);
-		 * vec.add(bt4); } else vec.add(bty);
-		 * 
-		 * List<String> names = this.myDB.selectAll(); StringBuilder sb = new
-		 * StringBuilder(); sb.append("Names in database:\n"); for (String name
-		 * : names) { sb.append(name + "\n"); } str2 += " " + i;
-		 * refreshList(loadFromDB());
-		 */
+         * "Porsche", "00:22:33:44:55:66:77", 15); i = 1; btDevice btx =
+         * myDB.getBTD(bt3.mac); if(btx.mac == null) {
+         * a2dp.Vol.main.this.myDB.insert(bt3); vec.add(bt3); } else
+         * vec.add(btx);
+         *
+         * btDevice bt4 = new btDevice();
+         * bt4.setBluetoothDevice("Motorola T605", "Jaguar",
+         * "33:44:55:66:77:00:22", 14); btDevice bty = myDB.getBTD(bt4.mac); i =
+         * 2; if(bty.mac == null) { a2dp.Vol.main.this.myDB.insert(bt4);
+         * vec.add(bt4); } else vec.add(bty);
+         *
+         * List<String> names = this.myDB.selectAll(); StringBuilder sb = new
+         * StringBuilder(); sb.append("Names in database:\n"); for (String name
+         * : names) { sb.append(name + "\n"); } str2 += " " + i;
+         * refreshList(loadFromDB());
+         */
         // end of testing code
 
         if (carMode) {
@@ -1058,55 +1069,53 @@ public class main extends Activity {
                 // onActivityResult(ENABLE_BLUETOOTH, result, enableBluetooth);
                 return 0;
             }
-            if (mBTA != null) {
-                Set<BluetoothDevice> pairedDevices = mBTA.getBondedDevices();
-                // If there are paired devices
+            Set<BluetoothDevice> pairedDevices = mBTA.getBondedDevices();
+            // If there are paired devices
 
-                if (pairedDevices.size() > 0) {
-                    //IBluetooth ibta = getIBluetooth();
-                    // Loop through paired devices
-                    for (BluetoothDevice device : pairedDevices) {
-                        // Add the name and address to an array adapter to show in a
-                        // ListView
-                        if (device.getAddress() != null) {
-                            btDevice bt = new btDevice();
-                            i++;
-                            String name = null;
+            if (pairedDevices.size() > 0) {
+                //IBluetooth ibta = getIBluetooth();
+                // Loop through paired devices
+                for (BluetoothDevice device : pairedDevices) {
+                    // Add the name and address to an array adapter to show in a
+                    // ListView
+                    if (device.getAddress() != null) {
+                        btDevice bt = new btDevice();
+                        i++;
+                        String name = null;
 
-                            try {
-                                Method m = device.getClass().getMethod("getAlias");
-                                Object res = m.invoke(device);
-                                if (res != null)
-                                    name = res.toString();
-                            } catch (NoSuchMethodException e) {
-                                e.printStackTrace();
-                            } catch (InvocationTargetException e) {
-                                e.printStackTrace();
-                            } catch (IllegalAccessException e) {
-                                e.printStackTrace();
-                            }
-
-                            if (name == null)
-                                name = device.getName();
-
-                            bt.setBluetoothDevice(
-                                    device,
-                                    name,
-                                    am.getStreamMaxVolume(AudioManager.STREAM_MUSIC));
-
-                            bt.setSetV(true);
-
-                            btDevice bt2 = myDB.getBTD(bt.mac);
-
-                            if (bt2.mac == null) {
-                                myDB.insert(bt);
-                                vec.add(bt);
-                            } else
-                                vec.add(bt2);
+                        try {
+                            Method m = device.getClass().getMethod("getAlias");
+                            Object res = m.invoke(device);
+                            if (res != null)
+                                name = res.toString();
+                        } catch (NoSuchMethodException e) {
+                            e.printStackTrace();
+                        } catch (InvocationTargetException e) {
+                            e.printStackTrace();
+                        } catch (IllegalAccessException e) {
+                            e.printStackTrace();
                         }
-                    }
 
+                        if (name == null)
+                            name = device.getName();
+
+                        bt.setBluetoothDevice(
+                                device,
+                                name,
+                                am.getStreamMaxVolume(AudioManager.STREAM_MUSIC));
+
+                        bt.setSetV(true);
+
+                        btDevice bt2 = myDB.getBTD(bt.mac);
+
+                        if (bt2.mac == null) {
+                            myDB.insert(bt);
+                            vec.add(bt);
+                        } else
+                            vec.add(bt2);
+                    }
                 }
+
             }
             refreshList(loadFromDB());
             Toast.makeText(application, "Found " + i + " Bluetooth Devices",
@@ -1166,11 +1175,12 @@ public class main extends Activity {
 
             switch (resultCode) {
                 case TextToSpeech.Engine.CHECK_VOICE_DATA_PASS:
-                    if (toasts) Toast.makeText(application, R.string.TTSready, Toast.LENGTH_SHORT)
-                            .show();
+/*                    if (toasts) Toast.makeText(application, R.string.TTSready, Toast.LENGTH_SHORT)
+                            .show();*/
+                    service.mTtsReady = true;
                     break;
 
-                case TextToSpeech.Engine.CHECK_VOICE_DATA_MISSING_DATA:
+/*                case TextToSpeech.Engine.CHECK_VOICE_DATA_MISSING_DATA:
                     if (TTSignore) {
                         // do something maybe?
                     } else {
@@ -1207,7 +1217,7 @@ public class main extends Activity {
                 case TextToSpeech.Engine.CHECK_VOICE_DATA_BAD_DATA:
                     if (toasts) Toast.makeText(application, "TTS Bad Data", Toast.LENGTH_SHORT)
                             .show();
-                    break;
+                    break;*/
 
                 case TextToSpeech.Engine.CHECK_VOICE_DATA_FAIL:
                     if (toasts)
@@ -1215,7 +1225,10 @@ public class main extends Activity {
                                 .show();
                     break;
             }
-
+            final String done = "a2dp.vol.service.NOTIFY";
+            Intent i = new Intent();
+            i.setAction(done);
+            application.sendBroadcast(i);
         }
     }
 
@@ -1223,7 +1236,7 @@ public class main extends Activity {
         SharedPreferences.Editor editor = preferences.edit();
         TTSignore = true;
         editor.putBoolean("TTSignore", true);
-        editor.commit();
+        editor.apply();
         return null;
     }
 
@@ -1251,7 +1264,7 @@ public class main extends Activity {
 
             // Toast.makeText(this, "No data", Toast.LENGTH_LONG);
         }
-        a2dp.Vol.main.this.ladapt = new ArrayAdapter<String>(application,
+        a2dp.Vol.main.this.ladapt = new ArrayAdapter<>(application,
                 resourceID, lstring);
         a2dp.Vol.main.this.lvl.setAdapter(ladapt);
         a2dp.Vol.main.this.ladapt.notifyDataSetChanged();

@@ -25,7 +25,7 @@ public class DeviceDB {
 	private static final int DATABASE_VERSION = 13;
 	private static final String TABLE_NAME = "devices";
 	private static Context context;
-	private SQLiteDatabase db;
+	private final SQLiteDatabase db;
 	private SQLiteStatement insertStmt;
 	private static final String INSERT = "insert into " + TABLE_NAME
 			+ "(desc1, desc2, mac, maxv, setv, getl, pname, bdevice, wifi, appaction, appdata, apptype, apprestart, tts," +
@@ -33,8 +33,8 @@ public class DeviceDB {
 					"values (?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 	public DeviceDB(Context context) {
-		DeviceDB.context = context;
-		OpenHelper openHelper = new OpenHelper(DeviceDB.context);
+
+		OpenHelper openHelper = new OpenHelper(context);
 		
 			this.db = openHelper.getWritableDatabase();	
 			
@@ -175,7 +175,10 @@ public class DeviceDB {
 				bt.setSilent(cs.getInt(24));
 				bt.setSleep(cs.getInt(25));
 				bt.setCarmode(cs.getInt(26));
+
 			}
+			int bticon = bt.getIcon();
+			bt.setIcon(checkIcon(bticon));
 		} catch (Exception e) {
 			bt.mac = null;
 			
@@ -185,6 +188,22 @@ public class DeviceDB {
 		return bt;
 	}
 
+	// make sure icon is valid
+	private int checkIcon(int icon){
+		ArrayList<Integer> icons = new ArrayList<>();
+        icons.add(R.drawable.car2);
+        icons.add(R.drawable.headset);
+        icons.add(R.drawable.ic_launcher);
+        icons.add(R.drawable.icon5);
+        icons.add(R.drawable.usb);
+        icons.add(R.drawable.jack);
+
+		if(icons.contains(icon)){
+			return icon;
+		}else{
+			return R.drawable.car2;
+		}
+	}
 	/**
 	 * Removes the data table from the database that stores all the btDevices.
 	 */
@@ -209,7 +228,7 @@ public class DeviceDB {
 	 *         device name if blank.
 	 */
 	public List<String> selectAll() {
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		if(!this.db.isOpen())return null;
 		Cursor cursor = this.db.query(TABLE_NAME, new String[] { "desc1",
 				"desc2" }, null, null, null, null, "desc2");
@@ -237,7 +256,7 @@ public class DeviceDB {
 	 * @return a vector of btDevices for all the data in the btDevice table.
 	 */
 	public Vector<btDevice> selectAlldb() {
-		Vector<btDevice> list = new Vector<btDevice>();
+		Vector<btDevice> list = new Vector<>();
 		Cursor cursor = this.db.query(TABLE_NAME, new String[] { "desc1",
 				"desc2", "mac", "maxv", "setv", "getl", "pname" , "bdevice", "wifi", "appaction", "appdata", "apptype", 
 				"apprestart", "tts", "setpv", "phonev" , "appkill" , "enablegps", "icon", "smsdelay", "smsstream", "voldelay", 
@@ -276,7 +295,7 @@ public class DeviceDB {
 				list.add(bt);
 			} while (cursor.moveToNext());
 		}
-		if (cursor != null && !cursor.isClosed()) {
+		if (!cursor.isClosed()) {
 			cursor.close();
 		}
 		return list;
@@ -322,7 +341,6 @@ public class DeviceDB {
 					db.execSQL(String.format( "INSERT INTO %s (%s) SELECT %s from temp_%s", TABLE_NAME, cols, cols, TABLE_NAME));
 					db.execSQL("DROP table 'temp_" + TABLE_NAME + "'");
 					Toast.makeText(context, "Database upgraded succesfully", Toast.LENGTH_LONG).show();
-					return;
 					
 				} catch (SQLException e) {
 					// if anything goes wrong, just start over
@@ -339,19 +357,14 @@ public class DeviceDB {
 		
 		public static List<String> GetColumns(SQLiteDatabase db) {
 		    List<String> ar = null;
-		    Cursor c = null;
-		    try {
-		        c = db.rawQuery("select * from " + DeviceDB.TABLE_NAME + " limit 1", null);
-		        if (c != null) {
-		            ar = new ArrayList<String>(Arrays.asList(c.getColumnNames()));
-		        }
-		    } catch (Exception e) {
-		        Log.v(DeviceDB.TABLE_NAME, e.getMessage(), e);
-		        e.printStackTrace();
-		    } finally {
-		        if (c != null)
-		            c.close();
-		    }
+            try (Cursor c = db.rawQuery("select * from " + DeviceDB.TABLE_NAME + " limit 1", null)) {
+                if (c != null) {
+                    ar = new ArrayList<>(Arrays.asList(c.getColumnNames()));
+                }
+            } catch (Exception e) {
+                Log.v(DeviceDB.TABLE_NAME, e.getMessage(), e);
+                e.printStackTrace();
+            }
 		    return ar;
 		}
 
