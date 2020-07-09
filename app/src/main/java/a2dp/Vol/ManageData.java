@@ -455,9 +455,8 @@ public class ManageData extends Activity {
                 // reopen the database
                 //myDB = new DeviceDB(application);
                 //Reload the device list in the main page
-                final String Ireload = "a2dp.vol.Main.RELOAD_LIST";
                 Intent itent = new Intent();
-                itent.setAction(Ireload);
+                itent.setAction(Actions.RELOAD_LIST);
                 itent.putExtra("device", "");
                 application.sendBroadcast(itent);
                 Toast.makeText(ManageData.this, R.string.ImportCompletedText,

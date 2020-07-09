@@ -540,9 +540,8 @@ public class EditDevice extends Activity {
 		try {
 			myDB.update(device);
 			// Reload the device list in the main page
-			final String Ireload = "a2dp.Vol.main.RELOAD_LIST";
 			Intent itent = new Intent();
-			itent.setAction(Ireload);
+			itent.setAction(Actions.RELOAD_LIST);
 			itent.putExtra("device", "");
 			application.sendBroadcast(itent);
 		} catch (Exception e) {

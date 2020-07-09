@@ -60,6 +60,8 @@ import android.widget.Toast;
 
 public class main extends Activity {
 
+    private static final String LOGTAG = "main";
+
     static AudioManager am = (AudioManager) null;
     static Button serv;
     boolean servrun = false;
@@ -256,7 +258,7 @@ public class main extends Activity {
 
         // this reciever is used to tell this main activity about devices
         // connecting and disconnecting.
-        IntentFilter filter5 = new IntentFilter("a2dp.Vol.main.RELOAD_LIST");
+        IntentFilter filter5 = new IntentFilter(Actions.RELOAD_LIST);
         this.registerReceiver(mReceiver5, filter5);
 
         IntentFilter filter6 = new IntentFilter("a2dp.vol.preferences.UPDATED");
@@ -299,7 +301,8 @@ public class main extends Activity {
                 }
             }
 
-            startService(new Intent(a2dp.Vol.main.this, NotificationCatcher.class));
+            //Log.d(LOGTAG,"start the NotificationCatcher service!");
+            //startService(new Intent(a2dp.Vol.main.this, NotificationCatcher.class));
 //			Intent intent = new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS");
 //			startActivity(intent);
         }
